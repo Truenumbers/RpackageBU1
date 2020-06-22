@@ -1,4 +1,6 @@
 #' Truenumber utility functions
+#' @author True Engineering Technology, LLC Boston, MA USA
+#' @references \url{http://www.truenum.com}
 
 require("httr")
 require("jsonlite")
@@ -17,7 +19,7 @@ tnum.var.ip = ""
 #'
 #' @examples
 tnum.authorize <- function(ip = "54.166.186.11") {
-  assign("tnum.ip", ip, envir = .GlobalEnv)
+  assign("tnum.var.ip", ip, envir = .GlobalEnv)
   result <- POST(
     paste0("http://", ip, "/v1/gateway/"),
     body = paste0('{"email":"admin@truenumbers.com"}'),
@@ -95,7 +97,56 @@ tnum.query <- function(query = "* has *",
       query = args,
       add_headers(Authorization = paste0("Bearer ", tnum.var.token))
     ))
-  message(paste0("Returned ", result$data$meta$records, " truenumbers"))
+  message(paste0("Returned ", start+1," thru ",start + length(result$data$truenumbers), " of ",result$data$meta$records, " results"))
   returnValue(result$data$truenumbers)
   
+}
+
+#' Title
+#'
+#' @param result 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+tnum.simplify_result <- function(result){
+  subjects <- vector()
+  properties <- vector()
+  Nvalues <- vector()
+  Cvalues <- vector()
+  units <- vector()
+  tags <- list()
+  
+  for( tn in result){
+    subjects <- append(subjects, tn$subject[[1]])
+    properties <- append(properties, tn$property[[1]])
+    taglist <- vector()
+    for(tag in tn$tags){
+      taglist <- append(taglist, tag$srd)
+    }
+
+    tags <- append(tags, list(taglist))
+    
+    if(tn$value$type == "numeric"){
+      Nvalues <- append(Nvalues, tn$value$magnitude[[1]])
+      Cvalues <- append(Cvalues, NA)
+      split_value <- strsplit(tn$value$value," ")
+      if(length(split_value) == 2){
+        units <- append(units, split_value[[2]])
+      } else {
+        units <- append(units, "")
+      }
+      
+    } else {
+      Cvalues <- append(Cvalues, tn$value$value[[1]])
+      Nvalues <- append(Nvalues, NA)
+      units <- append(units, NA)
+    }
+  }
+
+  retdf <- data.frame(subjects,properties,Cvalues,Nvalues,units)
+  retdf$tags <- tags
+
+  returnValue(retdf)
 }
