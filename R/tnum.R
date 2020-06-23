@@ -9,6 +9,7 @@ tnum.var.nspace <- ""
 tnum.var.nspaces <- ""
 tnum.var.token = ""
 tnum.var.ip = ""
+tnum.var.result = ""
 
 #' Title
 #'
@@ -98,8 +99,8 @@ tnum.query <- function(query = "* has *",
       add_headers(Authorization = paste0("Bearer ", tnum.var.token))
     ))
   message(paste0("Returned ", start+1," thru ",start + length(result$data$truenumbers), " of ",result$data$meta$records, " results"))
-  returnValue(result$data$truenumbers)
-  
+  tnum.var.result <- result
+  returnValue(tnum.simplify_result(result))
 }
 
 #' Title
@@ -111,6 +112,7 @@ tnum.query <- function(query = "* has *",
 #'
 #' @examples
 tnum.simplify_result <- function(result){
+  result <- result$data$truenumbers
   subjects <- vector()
   properties <- vector()
   Nvalues <- vector()
